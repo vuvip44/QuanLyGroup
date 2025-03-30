@@ -19,7 +19,7 @@ namespace QuanLy.Infrastructure.Service.IService
         Task<PageResponse<IEnumerable<GroupViewModel>>> GetAllGroupAsync(QueryObject query);
         Task<GroupViewModel?> GetGroupByIdAsync(int id);
         Task<List<GroupTreeNodeViewModel>> GetGroupTreeAsync();
-        Task<GroupUsersViewModel?> GetGroupUsersAsync(int groupId);
+        Task<PageResponse<IEnumerable<UserInGroupViewModel>>> GetGroupUsersAsync(int groupId,QueryObject query);
 
     }
 }

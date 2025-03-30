@@ -57,12 +57,23 @@ namespace QuanLy.Mapping
                 Email = user.Email,
                 Account = user.Account,
                 OrderNumber = user.OrderNumber,
-                Groups = user.UserGroups.Select(g => new GroupInforViewModel
-                {
-                    Id = g.Group.Id,
-                    Name = g.Group.Name,
-                    Code = g.Group.Code
-                }).ToList()
+                Groups = user.UserGroups.Select(g => g.ToGroupInforViewModelFromUserGroup()).ToList()
+            };
+        }
+
+        public static UpdateUserViewModel ToUpdateUserViewModel(this User user)
+        {
+            return new UpdateUserViewModel
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Account = user.Account,
+                OrderNumber = user.OrderNumber,
+                BirthDate=user.BirthDate,
+                Gender=user.Gender,
+                PhoneNumber=user.PhoneNumber,
+                GroupIds = user.UserGroups.Select(g => g.GroupId).ToList()
             };
         }
     }

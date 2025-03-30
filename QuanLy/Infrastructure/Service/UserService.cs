@@ -17,21 +17,27 @@ namespace QuanLy.Infrastructure.Service
     {
         private readonly IUserRepository _userRepository;
 
-        public UserService(IUserRepository userRepository)
+        private readonly ILogger<UserService> _logger;
+
+        public UserService(IUserRepository userRepository, ILogger<UserService> logger)
         {
+            _logger = logger;
+        
             _userRepository = userRepository;
         }
         public async Task<UserViewModel> CreateUserAsync(CreateUserViewModel model)
         {
             if (await _userRepository.UserExistsAsync(model.Email, model.Account))
             {
-                throw new Exception("User already exists");
+                _logger.LogWarning("User with Email {Email} and Account {Account} already exists", model.Email, model.Account);
+                return null;
             }
             var user = model.ToEntityFromCreateUserViewModel();
             var createUser = await _userRepository.CreateUserAsync(user);
             if (createUser == null)
             {
-                throw new Exception("Create user failed");
+                _logger.LogWarning("Failed to create user");
+                return null;
             }
             return createUser.ToUserViewModelFromEntity();
 
@@ -41,7 +47,8 @@ namespace QuanLy.Infrastructure.Service
         {
             if (!await _userRepository.UserExistsAsync(id))
             {
-                throw new Exception("User not found");
+                _logger.LogWarning("User with Id {Id} does not exist", id);
+                return false;
 
             }
             var result = await _userRepository.DeleteUserAsync(id);
@@ -69,7 +76,8 @@ namespace QuanLy.Infrastructure.Service
             var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
-                throw new Exception("User not found");
+                _logger.LogWarning("User with Id {Id} does not exist", id);
+                return null;
             }
             return user.ToUserViewModelFromEntity();
         }
@@ -78,11 +86,13 @@ namespace QuanLy.Infrastructure.Service
         {
             if (!await _userRepository.UserExistsAsync(model.Id))
             {
-                throw new Exception("User not found");
+                _logger.LogWarning("User with Id {Id} does not exist", model.Id);
+                return null;
             }
             if (await _userRepository.UserExistsAsync(model.Email, model.Account))
             {
-                throw new Exception("User already exists");
+                _logger.LogWarning("User with Email {Email} and Account {Account} already exists", model.Email, model.Account);
+                return null;
             }
             var user = model.ToEntityFromUpdateUserViewModel();
             var updateUser = await _userRepository.UpdateUserAsync(user);

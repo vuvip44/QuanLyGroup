@@ -52,5 +52,46 @@ namespace QuanLy.Mapping
 
             };
         }
+
+        public static GroupTreeNodeViewModel ToGroupTreeNodeViewModelFromEntity(this Group group)
+        {
+            return new GroupTreeNodeViewModel()
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Code = group.Code,
+                OrderNumber = group.OrderNumber,
+                ParentId = group.ParentGroupId,
+                Children = new List<GroupTreeNodeViewModel>()
+            };
+        }
+
+        public static GroupUsersViewModel ToGroupUsersViewModelFromEntity(this Group group)
+        {
+            return new GroupUsersViewModel
+            {
+                GroupId = group.Id,
+                GroupName = group.Name,
+                GroupCode = group.Code,
+                Users=new List<UserInGroupViewModel>()
+            };
+        }
+
+        public static GroupInforViewModel ToGroupInforViewModelFromUserGroup(this UserGroup userGroup)
+        {
+            var group = userGroup.Group;
+            if (group == null)
+            {
+                return null;
+            }
+        
+            return new GroupInforViewModel()
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Code = group.Code,
+                
+            };
+        }
     }
 }
