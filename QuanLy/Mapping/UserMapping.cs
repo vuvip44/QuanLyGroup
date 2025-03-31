@@ -22,10 +22,10 @@ namespace QuanLy.Mapping
                 BirthDate = model.BirthDate,
                 Gender = model.Gender,
                 PhoneNumber = model.PhoneNumber,
-                UserGroups = model.GroupIds.Select(g => new UserGroup
-                {
-                    GroupId = g
-                }).ToList()
+                // UserGroups = model.GroupIds.Select(g => new UserGroup
+                // {
+                //     GroupId = g
+                // }).ToList()
             };
         }
 
@@ -41,10 +41,10 @@ namespace QuanLy.Mapping
                 BirthDate = model.BirthDate,
                 Gender = model.Gender,
                 PhoneNumber = model.PhoneNumber,
-                UserGroups = model.GroupIds.Select(g => new UserGroup
-                {
-                    GroupId = g
-                }).ToList()
+                // UserGroups = model.GroupIds.Select(g => new UserGroup
+                // {
+                //     GroupId = g
+                // }).ToList()
             };
         }
 
@@ -57,6 +57,9 @@ namespace QuanLy.Mapping
                 Email = user.Email,
                 Account = user.Account,
                 OrderNumber = user.OrderNumber,
+                Gender = user.Gender,
+                BirthDate = user.BirthDate,
+                PhoneNumber = user.PhoneNumber,
                 Groups = user.UserGroups.Select(g => g.ToGroupInforViewModelFromUserGroup()).ToList()
             };
         }
@@ -70,9 +73,9 @@ namespace QuanLy.Mapping
                 Email = user.Email,
                 Account = user.Account,
                 OrderNumber = user.OrderNumber,
-                BirthDate=user.BirthDate,
-                Gender=user.Gender,
-                PhoneNumber=user.PhoneNumber,
+                BirthDate = user.BirthDate,
+                Gender = user.Gender,
+                PhoneNumber = user.PhoneNumber,
                 GroupIds = user.UserGroups.Select(g => g.GroupId).ToList()
             };
         }

@@ -13,13 +13,14 @@ namespace QuanLy.Infrastructure.Service.IService
 {
     public interface IGroupService
     {
+        Task<List<GroupViewModel>> GetAllGroupsAsync();
         Task<GroupViewModel> CreateGroupAsync(CreateGroupViewModel model);
         Task<GroupViewModel> UpdateGroupAsync(UpdateGroupViewModel model);
         Task<bool> DeleteGroupAsync(int id);
         Task<PageResponse<IEnumerable<GroupViewModel>>> GetAllGroupAsync(QueryObject query);
         Task<GroupViewModel?> GetGroupByIdAsync(int id);
         Task<List<GroupTreeNodeViewModel>> GetGroupTreeAsync();
-        Task<PageResponse<IEnumerable<UserInGroupViewModel>>> GetGroupUsersAsync(int groupId,QueryObject query);
+        Task<PageResponse<IEnumerable<UserInGroupViewModel>>> GetGroupUsersAsync(int groupId, QueryObject query);
 
     }
 }

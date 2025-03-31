@@ -12,7 +12,7 @@ using QuanLy.Data;
 namespace QuanLy.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20250321014704_InitCreate")]
+    [Migration("20250331101301_InitCreate")]
     partial class InitCreate
     {
         /// <inheritdoc />
@@ -103,17 +103,9 @@ namespace QuanLy.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserGroupGroupId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("UserGroupUserId")
-                        .HasColumnType("int");
-
                     b.HasKey("UserId", "GroupId");
 
                     b.HasIndex("GroupId");
-
-                    b.HasIndex("UserGroupUserId", "UserGroupGroupId");
 
                     b.ToTable("UserGroups");
                 });
@@ -141,10 +133,6 @@ namespace QuanLy.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("QuanLy.Models.UserGroup", null)
-                        .WithMany("UserGroups")
-                        .HasForeignKey("UserGroupUserId", "UserGroupGroupId");
-
                     b.Navigation("Group");
 
                     b.Navigation("User");
@@ -156,11 +144,6 @@ namespace QuanLy.Migrations
                 });
 
             modelBuilder.Entity("QuanLy.Models.User", b =>
-                {
-                    b.Navigation("UserGroups");
-                });
-
-            modelBuilder.Entity("QuanLy.Models.UserGroup", b =>
                 {
                     b.Navigation("UserGroups");
                 });

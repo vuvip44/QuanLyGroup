@@ -9,7 +9,7 @@ namespace QuanLy.Infrastructure.Repository.IRepository
     {
         Task<int> AddUserToGroupAsync(int userId, int groupId);
         Task<int> RemoveUserFromGroupAsync(int userId, int groupId);
-
+        Task<bool> RemoveUserFromAllGroupsAsync(int userId);
         Task<bool> IsUserInGroupAsync(int userId, int groupId);
     }
 }

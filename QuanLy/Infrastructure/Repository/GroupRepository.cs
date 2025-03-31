@@ -88,6 +88,19 @@ namespace QuanLy.Infrastructure.Repository.IRepository
             return pageResponse;
         }
 
+        public async Task<List<Group>> GetAllGroupsAsync()
+        {
+            try
+            {
+                return await _context.Groups.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all groups from database.");
+                return new List<Group>();
+            }
+        }
+
         public async Task<Group?> GetGroupByIdAsync(int id)
         {
             try

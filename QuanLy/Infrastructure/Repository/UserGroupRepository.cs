@@ -45,6 +45,30 @@ namespace QuanLy.Infrastructure.Repository
             return await _context.UserGroups.AnyAsync(ug => ug.UserId == userId && ug.GroupId == groupId);
         }
 
+        public async Task<bool> RemoveUserFromAllGroupsAsync(int userId)
+        {
+            try
+            {
+                var userGroups = await _context.UserGroups
+                    .Where(ug => ug.UserId == userId)
+                    .ToListAsync();
+
+                if (userGroups.Any())
+                {
+                    _context.UserGroups.RemoveRange(userGroups);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Removed user {UserId} from all groups", userId);
+                }
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error removing user {UserId} from all groups", userId);
+                return false;
+            }
+        }
+
         public async Task<int> RemoveUserFromGroupAsync(int userId, int groupId)
         {
             try
@@ -52,7 +76,7 @@ namespace QuanLy.Infrastructure.Repository
                 var userGroup = await _context.UserGroups.FirstOrDefaultAsync(ug => ug.UserId == userId && ug.GroupId == groupId);
                 _context.UserGroups.Remove(userGroup);
                 await _context.SaveChangesAsync();
-                return 0;
+                return 1;
             }
             catch (System.Exception e)
             {

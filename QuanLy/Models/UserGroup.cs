@@ -17,6 +17,5 @@ namespace QuanLy.Models
 
         public virtual Group Group { get; set; }
 
-        public virtual ICollection<UserGroup> UserGroups { get; set; }
     }
 }

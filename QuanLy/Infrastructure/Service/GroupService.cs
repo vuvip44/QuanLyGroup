@@ -20,10 +20,10 @@ namespace QuanLy.Infrastructure.Service.IService
 
         private readonly ILogger<GroupService> _logger;
 
-        public GroupService(IGroupRepository groupRepository,ILogger<GroupService> logger)
+        public GroupService(IGroupRepository groupRepository, ILogger<GroupService> logger)
         {
             _groupRepository = groupRepository;
-            _logger=logger;
+            _logger = logger;
         }
         public async Task<GroupViewModel> CreateGroupAsync(CreateGroupViewModel model)
         {
@@ -68,6 +68,27 @@ namespace QuanLy.Infrastructure.Service.IService
             return pageResponseViewModel;
         }
 
+        public async Task<List<GroupViewModel>> GetAllGroupsAsync()
+        {
+            try
+            {
+                var groups = await _groupRepository.GetAllGroupsAsync();
+                return groups.Select(g => new GroupViewModel
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    Code = g.Code,
+                    OrderNumber = g.OrderNumber,
+                    ParentGroupId = g.ParentGroupId
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all groups.");
+                return new List<GroupViewModel>();
+            }
+        }
+
         public async Task<GroupViewModel?> GetGroupByIdAsync(int id)
         {
             if (!await _groupRepository.GroupExistsAsync(id))
@@ -87,14 +108,14 @@ namespace QuanLy.Infrastructure.Service.IService
             };
             var groups = (await _groupRepository.GetAllGroupsAsync(query)).Data;
             var groupNodes = ((IEnumerable<Group>)groups).Select(g => g.ToGroupTreeNodeViewModelFromEntity()).ToList();
-            var tree=new List<GroupTreeNodeViewModel>();
+            var tree = new List<GroupTreeNodeViewModel>();
             var lookup = groupNodes.ToLookup(g => g.Id);
-            foreach(var node in groupNodes)
+            foreach (var node in groupNodes)
             {
-                if(node.ParentId.HasValue&&lookup.Contains(node.ParentId.Value))
+                if (node.ParentId.HasValue && lookup.Contains(node.ParentId.Value))
                 {
                     var parentNode = lookup[node.ParentId.Value].FirstOrDefault();
-                    if(parentNode!=null)
+                    if (parentNode != null)
                     {
                         parentNode.Children.Add(node);
                     }
@@ -104,38 +125,38 @@ namespace QuanLy.Infrastructure.Service.IService
                     tree.Add(node);
                 }
             }
-            return tree.OrderBy(g=>g.OrderNumber).ToList();
+            return tree.OrderBy(g => g.OrderNumber).ToList();
         }
 
         public async Task<PageResponse<IEnumerable<UserInGroupViewModel>>> GetGroupUsersAsync(int groupId, QueryObject query)
         {
-            var group=await _groupRepository.GetGroupByIdAsync(groupId);
-            if(group==null)
+            var group = await _groupRepository.GetGroupByIdAsync(groupId);
+            if (group == null)
             {
                 _logger.LogWarning("Group with Id {Id} already exists", groupId);
                 return null;
             }
-            var usersInGroup=group.UserGroups?.Select(ug=>ug.User).OrderBy(u=>u.OrderNumber).ToList()??new List<User>();
-            if(!string.IsNullOrWhiteSpace(query.Name))
+            var usersInGroup = group.UserGroups?.Select(ug => ug.User).OrderBy(u => u.OrderNumber).ToList() ?? new List<User>();
+            if (!string.IsNullOrWhiteSpace(query.Name))
             {
-                usersInGroup=usersInGroup.Where(u=>u.Name.Contains(query.Name,StringComparison.OrdinalIgnoreCase)).ToList();
+                usersInGroup = usersInGroup.Where(u => u.Name.Contains(query.Name, StringComparison.OrdinalIgnoreCase)).ToList();
             }
-            var totalCount=usersInGroup.Count();
-            var skip=(query.Page-1)*query.PageSize;
-            var pageUsers=usersInGroup.Skip(skip).Take(query.PageSize).ToList();
-            var userViewModel=new List<UserInGroupViewModel>();
-            foreach(var user in pageUsers)
+            var totalCount = usersInGroup.Count();
+            var skip = (query.Page - 1) * query.PageSize;
+            var pageUsers = usersInGroup.Skip(skip).Take(query.PageSize).ToList();
+            var userViewModel = new List<UserInGroupViewModel>();
+            foreach (var user in pageUsers)
             {
-                var userGroups=(user.UserGroups).Select(ug=>ug.ToGroupInforViewModelFromUserGroup()).ToList();
+                var userGroups = (user.UserGroups).Select(ug => ug.ToGroupInforViewModelFromUserGroup()).ToList();
                 userViewModel.Add(new UserInGroupViewModel()
                 {
-                    Id=user.Id,
-                    Name=user.Name,
-                    Account=user.Account,
-                    Email=user.Email,
-                    PhoneNumber=user.PhoneNumber,
-                    OrderNumber=user.OrderNumber,
-                    Groups=userGroups
+                    Id = user.Id,
+                    Name = user.Name,
+                    Account = user.Account,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    OrderNumber = user.OrderNumber,
+                    Groups = userGroups
                 });
             }
             return new PageResponse<IEnumerable<UserInGroupViewModel>>
@@ -146,26 +167,26 @@ namespace QuanLy.Infrastructure.Service.IService
                 TotalPage = (long)Math.Ceiling((double)totalCount / query.PageSize),
                 Data = userViewModel.AsEnumerable()
             };
-            
+
 
         }
 
         public async Task<GroupViewModel> UpdateGroupAsync(UpdateGroupViewModel model)
         {
-            var groupModel=await _groupRepository.GetGroupByIdAsync(model.Id);
-            if(groupModel==null)
+            var groupModel = await _groupRepository.GetGroupByIdAsync(model.Id);
+            if (groupModel == null)
             {
                 _logger.LogWarning("Group with Id {Id} already exists", model.Id);
                 return null;
             }
-            
-            if(await _groupRepository.GroupExistsAsync(model.Code, model.Name))
+
+            if (await _groupRepository.GroupExistsAsync(model.Code, model.Name))
             {
                 _logger.LogWarning("Group with Code {Code} already exists", model.Code);
                 return null;
             }
             var group = model.ToEntityFromUpdateGroup();
-            group.UserGroups=groupModel?.UserGroups;
+            group.UserGroups = groupModel?.UserGroups;
             var updatedGroup = await _groupRepository.UpdateGroupAsync(group);
             if (updatedGroup == null)
             {

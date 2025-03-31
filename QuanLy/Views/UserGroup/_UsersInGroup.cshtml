@@ -1,0 +1,88 @@
+@model QuanLy.ViewModel.Response.PageResponse<IEnumerable<QuanLy.ViewModel.ViewMain.UserInGroupViewModel>>
+
+@{
+    var groupId = ViewContext.HttpContext.Request.Query["groupId"].ToString();
+}
+
+@if (Model.Data != null && Model.Data.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Account</th>
+                <th>Phone Number</th>
+                <th>Order Number</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Data)
+            {
+                <tr>
+                    <td>@user.Name</td>
+                    <td>@user.Email</td>
+                    <td>@user.Account</td>
+                    <td>@user.PhoneNumber</td>
+                    <td>@user.OrderNumber</td>
+                    <td>
+                        <form asp-controller="UserGroup" asp-action="RemoveUserFromGroup" method="post" style="display:inline;">
+                            <input type="hidden" name="userId" value="@user.Id" />
+                            <input type="hidden" name="groupId" value="@groupId" />
+                            <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Are you sure you want to remove this user from the group?')">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Phân trang -->
+    <div>
+        <p>Page @Model.Page of @Model.TotalPage (Total: @Model.TotalElement users)</p>
+        <nav>
+            <ul class="pagination">
+                <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                    <a class="page-link"
+                        href="javascript:loadUsersInGroup(@groupId, @(Model.Page - 1), @Model.PageSize)">Previous</a>
+                </li>
+                <li class="page-item @(Model.Page == Model.TotalPage ? "disabled" : "")">
+                    <a class="page-link"
+                        href="javascript:loadUsersInGroup(@groupId, @(Model.Page + 1), @Model.PageSize)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <p>
+        <a asp-controller="UserGroup" asp-action="AddUserToGroup" asp-route-groupId="@groupId" class="btn btn-primary">Add
+            User to Group</a>
+    </p>
+}
+else
+{
+    <p>No users in this group.</p>
+    <p>
+        <a asp-controller="UserGroup" asp-action="AddUserToGroup" asp-route-groupId="@groupId" class="btn btn-primary">Add
+            User to Group</a>
+    </p>
+}
+
+<script>
+    function loadUsersInGroup(groupId, page, pageSize) {
+        $.ajax({
+            url: '@Url.Action("GetUsersInGroup", "UserGroup")',
+            type: 'GET',
+            data: { groupId: groupId, page: page, pageSize: pageSize },
+            success: function (data) {
+                $('#usersInGroup').html(data);
+                $('#usersInGroup').data('groupId', groupId);
+            },
+            error: function () {
+                $('#usersInGroup').html('<p class="text-danger">Error loading users.</p>');
+            }
+        });
+    }
+</script>

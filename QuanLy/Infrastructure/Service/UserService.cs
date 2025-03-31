@@ -17,29 +17,62 @@ namespace QuanLy.Infrastructure.Service
     {
         private readonly IUserRepository _userRepository;
 
+        private readonly IUserGroupRepository _userGroupRepository;
+
         private readonly ILogger<UserService> _logger;
 
-        public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+        public UserService(IUserRepository userRepository, ILogger<UserService> logger, IUserGroupRepository userGroupRepository)
         {
             _logger = logger;
-        
+            _userGroupRepository = userGroupRepository;
             _userRepository = userRepository;
         }
+
+
         public async Task<UserViewModel> CreateUserAsync(CreateUserViewModel model)
         {
+            _logger.LogInformation("Starting to create user: Email={Email}, Account={Account}", model.Email, model.Account);
+
             if (await _userRepository.UserExistsAsync(model.Email, model.Account))
             {
                 _logger.LogWarning("User with Email {Email} and Account {Account} already exists", model.Email, model.Account);
                 return null;
             }
+
             var user = model.ToEntityFromCreateUserViewModel();
-            var createUser = await _userRepository.CreateUserAsync(user);
-            if (createUser == null)
+            _logger.LogInformation("User entity created: Name={Name}, Email={Email}, Account={Account}", user.Name, user.Email, user.Account);
+
+            var createdUser = await _userRepository.CreateUserAsync(user);
+            if (createdUser == null)
             {
-                _logger.LogWarning("Failed to create user");
+                _logger.LogWarning("Failed to create user with Email={Email}, Account={Account}", model.Email, model.Account);
                 return null;
             }
-            return createUser.ToUserViewModelFromEntity();
+
+            _logger.LogInformation("User created successfully with Id={Id}", createdUser.Id);
+
+            // Thêm user vào các nhóm (nếu có)
+            if (model.GroupIds != null && model.GroupIds.Any())
+            {
+                foreach (var groupId in model.GroupIds)
+                {
+                    var result = await _userGroupRepository.AddUserToGroupAsync(createdUser.Id, groupId);
+                    if (result == 0)
+                    {
+                        _logger.LogWarning("Failed to add user {UserId} to group {GroupId}", createdUser.Id, groupId);
+                    }
+                }
+            }
+
+            // Lấy lại user từ cơ sở dữ liệu để bao gồm thông tin nhóm
+            var userWithGroups = await _userRepository.GetUserByIdAsync(createdUser.Id);
+            if (userWithGroups == null)
+            {
+                _logger.LogWarning("Failed to retrieve user with groups after creation, UserId={UserId}", createdUser.Id);
+                return createdUser.ToUserViewModelFromEntity();
+            }
+
+            return userWithGroups.ToUserViewModelFromEntity();
 
         }
 
@@ -84,23 +117,58 @@ namespace QuanLy.Infrastructure.Service
 
         public async Task<UserViewModel> UpdateUserAsync(UpdateUserViewModel model)
         {
-            if (!await _userRepository.UserExistsAsync(model.Id))
+            var existingUser = await _userRepository.GetUserByIdAsync(model.Id);
+            if (existingUser == null)
             {
                 _logger.LogWarning("User with Id {Id} does not exist", model.Id);
                 return null;
             }
-            if (await _userRepository.UserExistsAsync(model.Email, model.Account))
+
+
+
+
+            // Cập nhật thông tin user
+            existingUser.Name = model.Name;
+            existingUser.Email = model.Email;
+            existingUser.Account = model.Account;
+            existingUser.OrderNumber = model.OrderNumber;
+            existingUser.BirthDate = model.BirthDate;
+            existingUser.Gender = model.Gender;
+            existingUser.PhoneNumber = model.PhoneNumber;
+
+            var updatedUser = await _userRepository.UpdateUserAsync(existingUser);
+            if (updatedUser == null)
             {
-                _logger.LogWarning("User with Email {Email} and Account {Account} already exists", model.Email, model.Account);
+                _logger.LogWarning("Failed to update user with Id={Id}", model.Id);
                 return null;
             }
-            var user = model.ToEntityFromUpdateUserViewModel();
-            var updateUser = await _userRepository.UpdateUserAsync(user);
-            if (updateUser == null)
+
+            // Cập nhật danh sách nhóm
+            // Bước 1: Xóa tất cả UserGroups hiện tại của user
+            await _userGroupRepository.RemoveUserFromAllGroupsAsync(updatedUser.Id);
+
+            // Bước 2: Thêm user vào các nhóm mới
+            if (model.GroupIds != null && model.GroupIds.Any())
             {
-                throw new Exception("Update user failed");
+                foreach (var groupId in model.GroupIds)
+                {
+                    var result = await _userGroupRepository.AddUserToGroupAsync(updatedUser.Id, groupId);
+                    if (result == 0)
+                    {
+                        _logger.LogWarning("Failed to add user {UserId} to group {GroupId}", updatedUser.Id, groupId);
+                    }
+                }
             }
-            return updateUser.ToUserViewModelFromEntity();
+
+            // Lấy lại user từ cơ sở dữ liệu để bao gồm thông tin nhóm
+            var userWithGroups = await _userRepository.GetUserByIdAsync(updatedUser.Id);
+            if (userWithGroups == null)
+            {
+                _logger.LogWarning("Failed to retrieve user with groups after update, UserId={UserId}", updatedUser.Id);
+                return updatedUser.ToUserViewModelFromEntity();
+            }
+
+            return userWithGroups.ToUserViewModelFromEntity();
 
         }
     }

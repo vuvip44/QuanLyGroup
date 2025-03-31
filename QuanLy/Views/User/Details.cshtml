@@ -1,0 +1,45 @@
+@model QuanLy.ViewModel.Response.User.UserViewModel
+
+@{
+    ViewData["Title"] = "User Details";
+}
+
+<h1>User Details</h1>
+
+<div>
+    <h4>@Model.Name</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Name</dt>
+        <dd class="col-sm-10">@Model.Name</dd>
+        <dt class="col-sm-2">Email</dt>
+        <dd class="col-sm-10">@Model.Email</dd>
+        <dt class="col-sm-2">Account</dt>
+        <dd class="col-sm-10">@Model.Account</dd>
+        <dt class="col-sm-2">Phone Number</dt>
+        <dd class="col-sm-10">@Model.PhoneNumber</dd>
+        <dt class="col-sm-2">Order Number</dt>
+        <dd class="col-sm-10">@Model.OrderNumber</dd>
+        <dt class="col-sm-2">Groups</dt>
+        <dd class="col-sm-10">
+            @if (Model.Groups != null && Model.Groups.Any())
+            {
+                    <ul>
+                        @foreach (var group in Model.Groups)
+                        {
+                                <li>@group.Name (Code: @group.Code)</li>
+                        }
+                    </ul>
+            }
+            else
+            {
+                    <span>No groups assigned.</span>
+            }
+        </dd>
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

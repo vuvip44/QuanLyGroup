@@ -29,3 +29,29 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+#groupTree {
+  margin-top: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.input-group {
+  max-width: 400px;
+  margin-bottom: 20px;
+}
+
+.table {
+  margin-top: 20px;
+}
+
+.pagination {
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.page-item.disabled .page-link {
+  pointer-events: none;
+  opacity: 0.6;
+}

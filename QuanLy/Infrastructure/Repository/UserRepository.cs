@@ -11,13 +11,13 @@ using QuanLy.ViewModel.Response;
 
 namespace QuanLy.Infrastructure.Repository
 {
-    public class UserRrpository : IUserRepository
+    public class UserRepository : IUserRepository
     {
         private readonly ApplicationDBContext _context;
 
-        private readonly ILogger<UserRrpository> _logger;
+        private readonly ILogger<UserRepository> _logger;
 
-        public UserRrpository(ApplicationDBContext context, ILogger<UserRrpository> logger)
+        public UserRepository(ApplicationDBContext context, ILogger<UserRepository> logger)
         {
             _context = context;
             _logger = logger;
@@ -60,19 +60,11 @@ namespace QuanLy.Infrastructure.Repository
             {
                 users = users.Where(x => x.Name.Contains(query.Name));
             }
-            // if (!string.IsNullOrWhiteSpace(query.SortBy))
-            // {
-            //     if (query.SortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
-            //     {
-            //         users = query.IsDecending ? users.OrderByDescending(x => x.Name) : users.OrderBy(x => x.Name);
-            //     }
-            //     else
-            //     {
-            //         users = query.IsDecending ? users.OrderByDescending(x => x.Id) : users.OrderBy(x => x.Id);
-            //     }
+            if (query.GroupId.HasValue)
+            {
+                users = users.Where(x => x.UserGroups.Any(ug => ug.GroupId == query.GroupId));
+            }
 
-            // }
-            // users = query.IsDecending ? users.OrderByDescending(x => x.Name) : users.OrderBy(x => x.Name);
             users = users.OrderBy(u => u.OrderNumber);
             var totalCount = await users.CountAsync();
             var skip = (query.Page - 1) * query.PageSize;

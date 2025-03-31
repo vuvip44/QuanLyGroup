@@ -11,11 +11,13 @@ namespace QuanLy.ViewModel.Require
         public string? Name { get; set; }
         public string? Code { get; set; }
 
+        public int? GroupId { get; set; }
+
         public string? GroupName { get; set; }
         // public bool IsDecending { get; set; }
 
         // public string? SortBy { get; set; }
-        public int Page { get; set; } =1;
+        public int Page { get; set; } = 1;
 
         public int PageSize { get; set; } = 20;
     }

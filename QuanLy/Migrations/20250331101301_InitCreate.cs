@@ -56,9 +56,7 @@ namespace QuanLy.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    GroupId = table.Column<int>(type: "int", nullable: false),
-                    UserGroupGroupId = table.Column<int>(type: "int", nullable: true),
-                    UserGroupUserId = table.Column<int>(type: "int", nullable: true)
+                    GroupId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -69,11 +67,6 @@ namespace QuanLy.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserGroups_UserGroups_UserGroupUserId_UserGroupGroupId",
-                        columns: x => new { x.UserGroupUserId, x.UserGroupGroupId },
-                        principalTable: "UserGroups",
-                        principalColumns: new[] { "UserId", "GroupId" });
                     table.ForeignKey(
                         name: "FK_UserGroups_Users_UserId",
                         column: x => x.UserId,
@@ -97,11 +90,6 @@ namespace QuanLy.Migrations
                 name: "IX_UserGroups_GroupId",
                 table: "UserGroups",
                 column: "GroupId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserGroups_UserGroupUserId_UserGroupGroupId",
-                table: "UserGroups",
-                columns: new[] { "UserGroupUserId", "UserGroupGroupId" });
         }
 
         /// <inheritdoc />

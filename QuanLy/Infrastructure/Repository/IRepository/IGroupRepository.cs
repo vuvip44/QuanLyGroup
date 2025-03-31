@@ -23,5 +23,6 @@ namespace QuanLy.Infrastructure.Repository.IRepository
         Task<bool> GroupExistsAsync(string codeGroup, string name);
 
         Task<bool> GroupExistsAsync(int id);
+        Task<List<Group>> GetAllGroupsAsync();
     }
 }
