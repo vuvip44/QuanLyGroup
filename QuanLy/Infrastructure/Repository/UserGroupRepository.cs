@@ -24,6 +24,10 @@ namespace QuanLy.Infrastructure.Repository
         {
             try
             {
+                if (await IsUserInGroupAsync(userId, groupId))
+                {
+                    return 0; // Trả về 0 nếu bản ghi đã tồn tại
+                }
                 var userGroup = new UserGroup
                 {
                     UserId = userId,

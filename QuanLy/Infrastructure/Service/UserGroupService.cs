@@ -35,50 +35,61 @@ namespace QuanLy.Infrastructure.Service.IService
 
         public async Task<bool> AddUserToGroupAsync(int userId, int groupId, CreateUserViewModel model = null)
         {
-            if (!await _groupRepository.GroupExistsAsync(groupId))
+            try
             {
-                _logger.LogWarning("Group with Id {GroupId} does not exist.", groupId);
-                return false;
-            }
-
-            // Kiểm tra sự tồn tại của người dùng
-            if (!await _userRepository.UserExistsAsync(userId))
-            {
-                if (model == null)
+                // Kiểm tra sự tồn tại của nhóm
+                if (!await _groupRepository.GroupExistsAsync(groupId))
                 {
-                    _logger.LogWarning("User with Id {UserId} does not exist and no user model provided to create a new user.", userId);
-                    return false;
+                    _logger.LogWarning("Group with Id {GroupId} does not exist.", groupId);
+                    throw new Exception("Group does not exist.");
                 }
 
-                // Tạo người dùng mới
-                var createdUser = await _userService.CreateUserAsync(model);
-                if (createdUser == null)
+                // Kiểm tra sự tồn tại của người dùng
+                if (!await _userRepository.UserExistsAsync(userId))
                 {
-                    _logger.LogWarning("Failed to create new user with Email {Email} and Account {Account}.", model.Email, model.Account);
-                    return false;
+                    if (model == null)
+                    {
+                        _logger.LogWarning("User with Id {UserId} does not exist and no user model provided to create a new user.", userId);
+                        throw new Exception("User does not exist and no user model provided to create a new user.");
+                    }
+
+                    // Tạo người dùng mới
+                    var createdUser = await _userService.CreateUserAsync(model);
+                    if (createdUser == null)
+                    {
+                        _logger.LogWarning("Failed to create new user with Email {Email} and Account {Account}.", model.Email, model.Account);
+                        throw new Exception("Failed to create new user.");
+                    }
+
+                    userId = createdUser.Id;
+                    _logger.LogInformation("Created new user with Id {UserId} for adding to Group {GroupId}.", userId, groupId);
                 }
 
-                userId = createdUser.Id; // Sử dụng Id của người dùng vừa tạo
-                _logger.LogInformation("Created new user with Id {UserId} for adding to Group {GroupId}.", userId, groupId);
-            }
+                // Kiểm tra xem người dùng đã thuộc nhóm hay chưa
+                if (await _userGroupRepository.IsUserInGroupAsync(userId, groupId))
+                {
+                    _logger.LogWarning("User {UserId} is already in Group {GroupId}.", userId, groupId);
+                    throw new Exception("User is already in the group.");
+                }
 
-            // Kiểm tra xem người dùng đã thuộc nhóm hay chưa
-            if (await _userGroupRepository.IsUserInGroupAsync(userId, groupId))
+                // Thêm người dùng vào nhóm
+                var result = await _userGroupRepository.AddUserToGroupAsync(userId, groupId);
+                if (result == 0)
+                {
+                    _logger.LogWarning("Failed to add User {UserId} to Group {GroupId}.", userId, groupId);
+                    throw new Exception("Failed to add user to group.");
+                }
+
+                _logger.LogInformation("Successfully added User {UserId} to Group {GroupId}.", userId, groupId);
+                return true;
+            }
+            catch (Exception ex)
             {
-                _logger.LogWarning("User {UserId} is already in Group {GroupId}.", userId, groupId);
-                return false;
+                _logger.LogError(ex, "Error adding user {UserId} to group {GroupId}.", userId, groupId);
+                throw new Exception(ex.Message, ex);
             }
-
-            // Thêm người dùng vào nhóm
-            var result = await _userGroupRepository.AddUserToGroupAsync(userId, groupId);
-            if (result == 0)
-            {
-                _logger.LogWarning("Failed to add User {UserId} to Group {GroupId}.", userId, groupId);
-                return false;
-            }
-
-            return true;
         }
+
 
 
         public async Task<bool> IsUserInGroup(int userId, int groupId)

@@ -1,238 +1,3 @@
-@* @model QuanLy.ViewModel.ViewMain.DashboardViewModel
-@using QuanLy.ViewModel.Response
-@using QuanLy.ViewModel.Response.Group
-@using QuanLy.ViewModel.Response.User
-
-@{
-    ViewData["Title"] = "Group Management";
-    var pageResponse = ViewBag.PageResponse as PageResponse<List<UserViewModel>>;
-    int? selectedGroupId = ViewBag.SelectedGroupId;
-    string searchName = ViewBag.SearchName;
-    string groupTreeData = ViewBag.GroupTreeData;
-}
-
-<h1>Group Management</h1>
-
-<div class="row">
-    <!-- Phần Groups (bên trái) -->
-    <div class="col-md-4">
-        <h2>Groups</h2>
-        <a asp-action="Create" asp-controller="Group" class="btn btn-primary mb-3">Create New Group</a>
-        <div id="groupTree" style="min-height: 300px;"></div>
-    </div>
-
-    <!-- Phần Users in Selected Group (bên phải) -->
-    <div class="col-md-8">
-        <h2>Users in Selected Group</h2>
-        @if (Model.SelectedGroupUsers != null)
-        {
-            <h4>@Model.SelectedGroupUsers.GroupName (@Model.SelectedGroupUsers.GroupCode)</h4>
-            <!-- Ô tìm kiếm -->
-            <form asp-action="Index" method="get" class="mb-3">
-                <div class="input-group">
-                    <input type="hidden" name="GroupId" value="@Model.SelectedGroupUsers.GroupId" />
-                    <input type="hidden" name="Page" value="1" />
-                    <input type="hidden" name="PageSize" value="@(pageResponse?.PageSize ?? 20)" />
-                    <input type="text" name="Name" class="form-control" placeholder="Search by name..."
-                        value="@searchName" />
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-primary">Search</button>
-                        <a class="btn btn-secondary" asp-action="Index"
-                            asp-route-GroupId="@Model.SelectedGroupUsers.GroupId" asp-route-Page="1"
-                            asp-route-PageSize="@(pageResponse?.PageSize ?? 20)">Clear</a>
-                    </div>
-                </div>
-            </form>
-
-            @if (Model.SelectedGroupUsers.Users != null && Model.SelectedGroupUsers.Users.Any())
-            {
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Account</th>
-                            <th>Phone Number</th>
-                            <th>Birth Date</th>
-                            <th>Gender</th>
-                            <th>Order Number</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var user in Model.SelectedGroupUsers.Users)
-                        {
-                            <tr>
-                                <td>@user.Name</td>
-                                <td>@user.Email</td>
-                                <td>@user.Account</td>
-                                <td>@user.PhoneNumber</td>
-                                <td>@user.BirthDate.ToString("dd/MM/yyyy")</td>
-                                <td>@user.Gender</td>
-                                <td>@user.OrderNumber</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-
-                <!-- Phân trang -->
-                @if (pageResponse != null && pageResponse.TotalPage > 1)
-                {
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination">
-                            <!-- Nút Previous -->
-                            <li class="page-item @(pageResponse.Page == 1 ? "disabled" : "")">
-                                <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId"
-                                    asp-route-Page="@(pageResponse.Page - 1)" asp-route-PageSize="@pageResponse.PageSize"
-                                    asp-route-Name="@searchName">Previous</a>
-                            </li>
-
-                            <!-- Các trang -->
-                            @for (int i = 1; i <= pageResponse.TotalPage; i++)
-                            {
-                                <li class="page-item @(i == pageResponse.Page ? "active" : "")">
-                                    <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId"
-                                        asp-route-Page="@i" asp-route-PageSize="@pageResponse.PageSize"
-                                        asp-route-Name="@searchName">@i</a>
-                                </li>
-                            }
-
-                            <!-- Nút Next -->
-                            <li class="page-item @(pageResponse.Page == pageResponse.TotalPage ? "disabled" : "")">
-                                <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId"
-                                    asp-route-Page="@(pageResponse.Page + 1)" asp-route-PageSize="@pageResponse.PageSize"
-                                    asp-route-Name="@searchName">Next</a>
-                            </li>
-                        </ul>
-                    </nav>
-                }
-            }
-            else
-            {
-                <p>No users found in this group.</p>
-            }
-        }
-        else
-        {
-            <p>Please select a group to view users.</p>
-        }
-    </div>
-</div>
-@section Styles {
-    <style>
-        #groupTree {
-            display: block !important;
-            visibility: visible !important;
-            min-height: 300px;
-        }
-
-        .jstree-container-ul,
-        .jstree-children {
-            display: block !important;
-            list-style: none !important;
-            padding: 0;
-            margin: 0;
-        }
-
-        .jstree-node {
-            display: block !important;
-            margin-left: 20px;
-            position: relative;
-        }
-
-        .jstree-anchor {
-            color: #000 !important;
-            text-decoration: none !important;
-            display: inline-block;
-            padding: 2px 5px;
-        }
-
-        .jstree-icon {
-            display: inline-block !important;
-            width: 16px !important;
-            height: 16px !important;
-            margin-right: 5px;
-            vertical-align: middle;
-        }
-
-        .jstree-ocl {
-            display: inline-block !important;
-            width: 16px !important;
-            height: 16px !important;
-            cursor: pointer;
-        }
-
-        .jstree-themeicon {
-            background-image: url("32px.png");
-        }
-    </style>
-}
-@section Scripts {
-    <script>
-        $(document).ready(function () {
-            try {
-                // Kiểm tra jQuery và jsTree có sẵn không
-                if (typeof $ === 'undefined') {
-                    console.error("jQuery is not loaded.");
-                    return;
-                }
-                if (typeof $.jstree === 'undefined') {
-                    console.error("jsTree is not loaded.");
-                    return;
-                }
-
-                // Kiểm tra #groupTree có tồn tại không
-                if ($('#groupTree').length === 0) {
-                    console.error("Element #groupTree not found in DOM.");
-                    return;
-                }
-
-                var treeData = @Html.Raw(groupTreeData);
-                console.log("GroupTreeData before jsTree:", JSON.stringify(treeData, null, 2));
-
-                if (!treeData || treeData.length === 0) {
-                    console.warn("No group data available to display in the tree.");
-                    $('#groupTree').html('<p>No groups available.</p>');
-                    return;
-                }
-
-                // Khởi tạo jsTree
-                $('#groupTree').jstree({
-                    'core': {
-                        'data': treeData,
-                        'themes': {
-                            'dots': true,
-                            'icons': true
-                        }
-                    }
-                }).on('init.jstree', function () {
-                    console.log("jsTree initialized.");
-                }).on('loaded.jstree', function () {
-                    console.log("jsTree loaded successfully.");
-                    console.log("jsTree HTML:", $('#groupTree').html());
-                }).on('error.jstree', function (e, data) {
-                    console.error("jsTree error:", data);
-                }).on('ready.jstree', function () {
-                    console.log("jsTree ready.");
-                    $('#groupTree').jstree('open_all'); // Mở rộng toàn bộ cây
-                    var selectedGroupId = '@selectedGroupId';
-                    if (selectedGroupId) {
-                        $('#groupTree').jstree('select_node', selectedGroupId); // Chọn node
-                    }
-                });
-
-                // Xử lý sự kiện khi click vào một node trong cây
-                $('#groupTree').on('select_node.jstree', function (e, data) {
-                    var groupId = data.node.id;
-                    console.log("Selected group ID:", groupId);
-                    window.location.href = '@Url.Action("Index", "Group")' + '?GroupId=' + groupId + '&Page=1';
-                });
-            } catch (error) {
-                console.error("Error initializing jsTree:", error);
-            }
-        });
-    </script>
-} *@
-
 @model QuanLy.ViewModel.ViewMain.DashboardViewModel
 @using QuanLy.ViewModel.Response
 @using QuanLy.ViewModel.Response.Group
@@ -240,7 +5,7 @@
 
 @{
     ViewData["Title"] = "Group Management";
-    var pageResponse = ViewBag.PageResponse as PageResponse<List<UserViewModel>>;
+    var pageResponse = ViewBag.PageResponse as PageResponse<IEnumerable<UserViewModel>>;
     int? selectedGroupId = ViewBag.SelectedGroupId;
     string searchName = ViewBag.SearchName;
     var groupList = ViewBag.GroupList as List<GroupViewModel> ?? new List<GroupViewModel>();
@@ -248,21 +13,41 @@
 
 <h1>Group Management</h1>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <div class="row">
     <!-- Phần Groups (bên trái) -->
     <div class="col-md-4">
         <h2>Groups</h2>
-        <a asp-action="Create" asp-controller="Group" class="btn btn-primary mb-3">Create New Group</a>
+        <a asp-action="Create" asp-controller="Group" class="btn btn-success mb-3">Create New Group</a>
         @if (groupList.Any())
         {
             <ul class="list-group">
                 @foreach (var group in groupList.OrderBy(g => g.OrderNumber))
                 {
-                    <li class="list-group-item @(group.Id == selectedGroupId ? "active" : "")">
-                        <a href="@Url.Action("Index", "Group", new { GroupId = group.Id, Page = 1 })"
-                            style="text-decoration: none; color: inherit;">
+                    <li class="list-group-item @(group.Id == selectedGroupId ? "active" : "") d-flex justify-content-between align-items-center">
+                        <a href="@Url.Action("Index", "Group", new { GroupId = group.Id, Page = 1 })" style="text-decoration: none; color: inherit;">
                             @group.Name (@group.Code)
                         </a>
+                        <div>
+                            <a asp-action="Edit" asp-controller="Group" asp-route-id="@group.Id" class="btn btn-sm btn-primary">Edit</a>
+                            <form asp-action="Delete" asp-controller="Group" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this group?');">
+                                <input type="hidden" name="id" value="@group.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </div>
                     </li>
                 }
             </ul>
@@ -279,19 +64,20 @@
         @if (Model.SelectedGroupUsers != null)
         {
             <h4>@Model.SelectedGroupUsers.GroupName (@Model.SelectedGroupUsers.GroupCode)</h4>
+            <!-- Nút Add User -->
+            <div class="mb-3">
+                <a asp-action="AddUserToGroup" asp-controller="UserGroup" asp-route-groupId="@Model.SelectedGroupUsers.GroupId" class="btn btn-success">Add User</a>
+            </div>
             <!-- Ô tìm kiếm -->
             <form asp-action="Index" method="get" class="mb-3">
                 <div class="input-group">
                     <input type="hidden" name="GroupId" value="@Model.SelectedGroupUsers.GroupId" />
                     <input type="hidden" name="Page" value="1" />
                     <input type="hidden" name="PageSize" value="@(pageResponse?.PageSize ?? 20)" />
-                    <input type="text" name="Name" class="form-control" placeholder="Search by name..."
-                        value="@searchName" />
+                    <input type="text" name="Name" class="form-control" placeholder="Search by name..." value="@searchName" />
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-primary">Search</button>
-                        <a class="btn btn-secondary" asp-action="Index"
-                            asp-route-GroupId="@Model.SelectedGroupUsers.GroupId" asp-route-Page="1"
-                            asp-route-PageSize="@(pageResponse?.PageSize ?? 20)">Clear</a>
+                        <a class="btn btn-secondary" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId" asp-route-Page="1" asp-route-PageSize="@(pageResponse?.PageSize ?? 20)">Clear</a>
                     </div>
                 </div>
             </form>
@@ -308,6 +94,7 @@
                             <th>Birth Date</th>
                             <th>Gender</th>
                             <th>Order Number</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -321,6 +108,13 @@
                                 <td>@user.BirthDate.ToString("dd/MM/yyyy")</td>
                                 <td>@user.Gender</td>
                                 <td>@user.OrderNumber</td>
+                                <td>
+                                    <form asp-action="RemoveUserFromGroup" asp-controller="UserGroup" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to remove this user from the group?');">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        <input type="hidden" name="groupId" value="@Model.SelectedGroupUsers.GroupId" />
+                                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                    </form>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -333,26 +127,20 @@
                         <ul class="pagination">
                             <!-- Nút Previous -->
                             <li class="page-item @(pageResponse.Page == 1 ? "disabled" : "")">
-                                <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId"
-                                    asp-route-Page="@(pageResponse.Page - 1)" asp-route-PageSize="@pageResponse.PageSize"
-                                    asp-route-Name="@searchName">Previous</a>
+                                <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId" asp-route-Page="@(pageResponse.Page - 1)" asp-route-PageSize="@pageResponse.PageSize" asp-route-Name="@searchName">Previous</a>
                             </li>
 
                             <!-- Các trang -->
                             @for (int i = 1; i <= pageResponse.TotalPage; i++)
                             {
                                 <li class="page-item @(i == pageResponse.Page ? "active" : "")">
-                                    <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId"
-                                        asp-route-Page="@i" asp-route-PageSize="@pageResponse.PageSize"
-                                        asp-route-Name="@searchName">@i</a>
+                                    <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId" asp-route-Page="@i" asp-route-PageSize="@pageResponse.PageSize" asp-route-Name="@searchName">@i</a>
                                 </li>
                             }
 
                             <!-- Nút Next -->
                             <li class="page-item @(pageResponse.Page == pageResponse.TotalPage ? "disabled" : "")">
-                                <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId"
-                                    asp-route-Page="@(pageResponse.Page + 1)" asp-route-PageSize="@pageResponse.PageSize"
-                                    asp-route-Name="@searchName">Next</a>
+                                <a class="page-link" asp-action="Index" asp-route-GroupId="@Model.SelectedGroupUsers.GroupId" asp-route-Page="@(pageResponse.Page + 1)" asp-route-PageSize="@pageResponse.PageSize" asp-route-Name="@searchName">Next</a>
                             </li>
                         </ul>
                     </nav>
@@ -375,12 +163,10 @@
         .list-group-item {
             cursor: pointer;
         }
-
         .list-group-item.active {
             background-color: #007bff;
             color: white;
         }
-
         .list-group-item:hover {
             background-color: #f8f9fa;
         }

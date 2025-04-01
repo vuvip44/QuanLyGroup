@@ -1,7 +1,10 @@
 @model QuanLy.ViewModel.Require.User.CreateUserViewModel
+@using QuanLy.Models.Constants
 
 @{
     ViewData["Title"] = "Add User to Group";
+    int groupId = ViewBag.GroupId;
+    var currentGroup = ViewBag.CurrentGroup as QuanLy.ViewModel.Response.Group.GroupViewModel;
 }
 
 <h1>Add User to Group</h1>
@@ -13,47 +16,60 @@
     </div>
 }
 
-<form asp-action="AddUserToGroup" method="post">
+<form asp-action="AddUserToGroup" asp-controller="UserGroup" asp-route-groupId="@groupId" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <input type="hidden" name="groupId" value="@ViewBag.GroupId" />
     <div class="form-group">
-        <label for="userId" class="control-label">User ID (if exists)</label>
-        <input type="number" name="userId" class="form-control" />
+        <label class="control-label">User ID (if exists)</label>
+        <input type="number" name="userId" id="userId" class="form-control" value="0" />
     </div>
-    <h4>Or Create New User</h4>
-    <div class="form-group">
-        <label asp-for="Name" class="control-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+    <div id="newUserSection">
+        <h4>Or Create New User</h4>
+        <div class="form-group">
+            <label asp-for="Name" class="control-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Email" class="control-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Account" class="control-label"></label>
+            <input asp-for="Account" class="form-control" />
+            <span asp-validation-for="Account" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="PhoneNumber" class="control-label"></label>
+            <input asp-for="PhoneNumber" class="form-control" />
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="OrderNumber" class="control-label"></label>
+            <input asp-for="OrderNumber" class="form-control" type="number" />
+            <span asp-validation-for="OrderNumber" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="BirthDate" class="control-label"></label>
+            <input asp-for="BirthDate" class="form-control" type="date" />
+            <span asp-validation-for="BirthDate" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Gender" class="control-label"></label>
+            <select asp-for="Gender" class="form-control" asp-items="Html.GetEnumSelectList<Gender>()"></select>
+            <span asp-validation-for="Gender" class="text-danger"></span>
+        </div>
     </div>
     <div class="form-group">
-        <label asp-for="Email" class="control-label"></label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Account" class="control-label"></label>
-        <input asp-for="Account" class="form-control" />
-        <span asp-validation-for="Account" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="PhoneNumber" class="control-label"></label>
-        <input asp-for="PhoneNumber" class="form-control" />
-        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="OrderNumber" class="control-label"></label>
-        <input asp-for="OrderNumber" class="form-control" />
-        <span asp-validation-for="OrderNumber" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="GroupIds" class="control-label">Additional Groups (optional)</label>
-        <input asp-for="GroupIds" class="form-control" />
-        <span asp-validation-for="GroupIds" class="text-danger"></span>
+        <label class="control-label">Additional Groups (optional)</label>
+        <input type="text" class="form-control"
+            value="@(currentGroup != null ? $"{currentGroup.Name} ({currentGroup.Code})" : "Group not found")"
+            readonly />
+        <input type="hidden" name="GroupIds" value="@groupId" />
     </div>
     <div class="form-group">
         <input type="submit" value="Add to Group" class="btn btn-primary" />
-        <a asp-controller="Group" asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <a asp-action="Index" asp-controller="Group" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
 
@@ -61,4 +77,22 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        $(document).ready(function () {
+            function toggleNewUserSection() {
+                var userId = parseInt($('#userId').val());
+                if (userId > 0) {
+                    $('#newUserSection').hide();
+                } else {
+                    $('#newUserSection').show();
+                }
+            }
+
+            // Gọi hàm khi trang tải
+            toggleNewUserSection();
+
+            // Gọi hàm khi giá trị userId thay đổi
+            $('#userId').on('input', toggleNewUserSection);
+        });
+    </script>
 }

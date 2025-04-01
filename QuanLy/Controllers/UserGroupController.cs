@@ -46,7 +46,6 @@ namespace QuanLy.Controllers
             }
         }
 
-        // GET: /UserGroup/AddUserToGroup/5
         public async Task<IActionResult> AddUserToGroup(int groupId)
         {
             try
@@ -59,7 +58,8 @@ namespace QuanLy.Controllers
                 }
 
                 ViewBag.GroupId = groupId;
-                return View();
+                ViewBag.CurrentGroup = group; // Truyền thông tin nhóm hiện tại vào ViewBag
+                return View(new CreateUserViewModel());
             }
             catch (Exception ex)
             {
@@ -69,29 +69,49 @@ namespace QuanLy.Controllers
             }
         }
 
-        // POST: /UserGroup/AddUserToGroup/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddUserToGroup(int groupId, int userId, CreateUserViewModel userModel = null)
         {
             try
             {
-                var result = await _userGroupService.AddUserToGroupAsync(userId, groupId, userModel);
-                if (!result)
+                // Nếu userId là 0 (tạo người dùng mới), kiểm tra validation của userModel
+                if (userId == 0)
                 {
-                    TempData["ErrorMessage"] = "Failed to add user to group. User may already be in the group or an error occurred.";
-                    ViewBag.GroupId = groupId;
-                    return View(userModel ?? new CreateUserViewModel());
+                    if (userModel == null)
+                    {
+                        TempData["ErrorMessage"] = "Please provide details for a new user.";
+                        ViewBag.GroupId = groupId;
+                        var group = await _groupService.GetGroupByIdAsync(groupId);
+                        ViewBag.CurrentGroup = group;
+                        return View(new CreateUserViewModel());
+                    }
+
+                    if (!ModelState.IsValid)
+                    {
+                        ViewBag.GroupId = groupId;
+                        var group = await _groupService.GetGroupByIdAsync(groupId);
+                        ViewBag.CurrentGroup = group;
+                        return View(userModel);
+                    }
+                }
+                else
+                {
+                    // Nếu userId được cung cấp, bỏ qua userModel
+                    userModel = null;
                 }
 
+                var result = await _userGroupService.AddUserToGroupAsync(userId, groupId, userModel);
                 TempData["SuccessMessage"] = "User added to group successfully.";
                 return RedirectToAction("Index", "Group");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unexpected error occurred while adding user to group with Id {GroupId}.", groupId);
-                TempData["ErrorMessage"] = "An unexpected error occurred while adding user to group.";
+                TempData["ErrorMessage"] = ex.Message;
                 ViewBag.GroupId = groupId;
+                var group = await _groupService.GetGroupByIdAsync(groupId);
+                ViewBag.CurrentGroup = group;
                 return View(userModel ?? new CreateUserViewModel());
             }
         }
@@ -106,15 +126,18 @@ namespace QuanLy.Controllers
                 var result = await _userGroupService.RemoveUserFromGroupAsync(userId, groupId);
                 if (!result)
                 {
-                    return Json(new { success = false, message = "Failed to remove user from group. User may not be in the group." });
+                    TempData["ErrorMessage"] = "Failed to remove user from group. User may not be in the group.";
+                    return RedirectToAction("Index", "Group", new { GroupId = groupId });
                 }
 
-                return Json(new { success = true, message = "User removed from group successfully." });
+                TempData["SuccessMessage"] = "User removed from group successfully.";
+                return RedirectToAction("Index", "Group", new { GroupId = groupId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unexpected error occurred while removing user {UserId} from group {GroupId}.", userId, groupId);
-                return Json(new { success = false, message = "An unexpected error occurred." });
+                TempData["ErrorMessage"] = "An unexpected error occurred while removing user from group.";
+                return RedirectToAction("Index", "Group", new { GroupId = groupId });
             }
         }
     }

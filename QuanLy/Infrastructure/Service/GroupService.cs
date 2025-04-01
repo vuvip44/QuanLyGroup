@@ -187,6 +187,7 @@ namespace QuanLy.Infrastructure.Service.IService
             }
             var group = model.ToEntityFromUpdateGroup();
             group.UserGroups = groupModel?.UserGroups;
+            group.Name = groupModel.Name;
             var updatedGroup = await _groupRepository.UpdateGroupAsync(group);
             if (updatedGroup == null)
             {
