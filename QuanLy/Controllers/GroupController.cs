@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using QuanLy.Infrastructure.Repository.IRepository;
 using QuanLy.Infrastructure.Service.IService;
 using QuanLy.ViewModel.Require;
 using QuanLy.ViewModel.Require.Group;
@@ -19,79 +20,167 @@ namespace QuanLy.Controllers
 
         private readonly IUserService _userService;
 
+        private readonly IUserRepository _userRepository;
+
         private readonly ILogger<GroupController> _logger;
 
-        public GroupController(IGroupService groupService, IUserService userService, ILogger<GroupController> logger)
+        public GroupController(IGroupService groupService, IUserService userService, IUserRepository userRepository, ILogger<GroupController> logger)
         {
             _groupService = groupService;
             _userService = userService;
+            _userRepository = userRepository;
             _logger = logger;
         }
 
-        // GET: /Group
+        // // GET: /Group
+        // public async Task<IActionResult> Index(QueryObject query)
+        // {
+        //     // Lấy danh sách tất cả nhóm
+        //     var groups = await _groupService.GetAllGroupsAsync();
+        //     var groupList = groups ?? new List<GroupViewModel>();
+
+        //     // Chuyển đổi danh sách nhóm thành dữ liệu dạng cây
+        //     var treeData = BuildGroupTree(groupList);
+        //     ViewBag.GroupTreeData = System.Text.Json.JsonSerializer.Serialize(treeData);
+        //     Console.WriteLine($"GroupTreeData: {ViewBag.GroupTreeData}");
+
+        //     // Nếu không có groupId được chọn, chọn nhóm đầu tiên (nếu có)
+        //     if (!query.GroupId.HasValue && groupList.Any())
+        //     {
+        //         query.GroupId = groupList.First().Id;
+        //     }
+
+        //     // Lấy danh sách người dùng thuộc nhóm được chọn
+        //     GroupUsersViewModel selectedGroupUsers = null;
+        //     if (query.GroupId.HasValue)
+        //     {
+        //         var usersResponse = await _userService.GetAllUsersAsync(query);
+        //         var group = groupList.FirstOrDefault(g => g.Id == query.GroupId);
+
+        //         // Ép kiểu usersResponse.Data thành IEnumerable<UserViewModel> trước khi gọi Select
+        //         var userViewModels = usersResponse.Data as IEnumerable<UserViewModel> ?? Enumerable.Empty<UserViewModel>();
+
+        //         selectedGroupUsers = new GroupUsersViewModel
+        //         {
+        //             GroupId = query.GroupId.Value,
+        //             GroupName = group?.Name,
+        //             GroupCode = group?.Code,
+        //             Users = userViewModels.Select(u => new UserInGroupViewModel
+        //             {
+        //                 Id = u.Id,
+        //                 Name = u.Name,
+        //                 Email = u.Email,
+        //                 Account = u.Account,
+        //                 OrderNumber = u.OrderNumber,
+        //                 BirthDate = u.BirthDate,
+        //                 Gender = u.Gender,
+        //                 PhoneNumber = u.PhoneNumber,
+        //                 Groups = u.Groups
+        //             }).ToList()
+        //         };
+
+        //         ViewBag.PageResponse = usersResponse;
+        //         ViewBag.SearchName = query.Name;
+        //     }
+
+        //     // Tạo DashboardViewModel
+        //     var dashboard = new DashboardViewModel
+        //     {
+        //         GroupTree = treeData,
+        //         SelectedGroupUsers = selectedGroupUsers
+        //     };
+
+        //     ViewBag.SelectedGroupId = query.GroupId;
+        //     return View(dashboard);
+        // }
+
+
+        // private List<GroupTreeNodeViewModel> BuildGroupTree(List<GroupViewModel> groups)
+        // {
+        //     var tree = new List<GroupTreeNodeViewModel>();
+        //     var groupDict = groups.ToDictionary(g => g.Id, g => new GroupTreeNodeViewModel
+        //     {
+        //         Id = g.Id,
+        //         Name = g.Name,
+        //         ParentId = g.ParentGroupId,
+        //         Code = g.Code,
+        //         OrderNumber = g.OrderNumber,
+        //         ICon = "jstree-folder",
+        //         Children = new List<GroupTreeNodeViewModel>()
+        //     });
+
+        //     foreach (var group in groups)
+        //     {
+        //         var node = groupDict[group.Id];
+        //         if (group.ParentGroupId.HasValue && groupDict.ContainsKey(group.ParentGroupId.Value))
+        //         {
+        //             groupDict[group.ParentGroupId.Value].Children.Add(node);
+        //         }
+        //         else
+        //         {
+        //             tree.Add(node);
+        //         }
+        //     }
+
+        //     return tree;
+        // }
         public async Task<IActionResult> Index(QueryObject query)
         {
+            // Lấy danh sách tất cả nhóm
             var groups = await _groupService.GetAllGroupsAsync();
-            ViewBag.Groups = groups ?? new List<GroupViewModel>();
+            var groupList = groups ?? new List<GroupViewModel>();
 
-            // Chuyển đổi danh sách nhóm thành dữ liệu dạng cây
-            var treeData = BuildGroupTree(groups);
-            ViewBag.GroupTreeData = System.Text.Json.JsonSerializer.Serialize(treeData);
+            // Truyền danh sách nhóm trực tiếp vào ViewBag
+            ViewBag.GroupList = groupList;
 
             // Nếu không có groupId được chọn, chọn nhóm đầu tiên (nếu có)
-            if (!query.GroupId.HasValue && groups.Any())
+            if (!query.GroupId.HasValue && groupList.Any())
             {
-                query.GroupId = groups.First().Id;
+                query.GroupId = groupList.First().Id;
             }
 
-            // Lấy danh sách người dùng thuộc nhóm được chọn (nếu có)
-            var pageResponse = await _userService.GetAllUsersAsync(query) ?? new ViewModel.Response.PageResponse<IEnumerable<UserViewModel>>
+            // Lấy danh sách người dùng thuộc nhóm được chọn
+            GroupUsersViewModel selectedGroupUsers = null;
+            if (query.GroupId.HasValue)
             {
-                Page = 1,
-                PageSize = 20,
-                TotalElement = 0,
-                TotalPage = 0,
-                Data = new List<UserViewModel>()
+                var usersResponse = await _userService.GetAllUsersAsync(query);
+                var group = groupList.FirstOrDefault(g => g.Id == query.GroupId);
+
+                // Ép kiểu usersResponse.Data thành IEnumerable<UserViewModel> trước khi gọi Select
+                var userViewModels = usersResponse.Data as IEnumerable<UserViewModel> ?? Enumerable.Empty<UserViewModel>();
+
+                selectedGroupUsers = new GroupUsersViewModel
+                {
+                    GroupId = query.GroupId.Value,
+                    GroupName = group?.Name,
+                    GroupCode = group?.Code,
+                    Users = userViewModels.Select(u => new UserInGroupViewModel
+                    {
+                        Id = u.Id,
+                        Name = u.Name,
+                        Email = u.Email,
+                        Account = u.Account,
+                        OrderNumber = u.OrderNumber,
+                        BirthDate = u.BirthDate,
+                        Gender = u.Gender,
+                        PhoneNumber = u.PhoneNumber,
+                        Groups = u.Groups
+                    }).ToList()
+                };
+
+                ViewBag.PageResponse = usersResponse;
+                ViewBag.SearchName = query.Name;
+            }
+
+            // Tạo DashboardViewModel
+            var dashboard = new DashboardViewModel
+            {
+                SelectedGroupUsers = selectedGroupUsers
             };
 
-            // Truyền thông tin phân trang vào ViewBag
             ViewBag.SelectedGroupId = query.GroupId;
-            ViewBag.PageResponse = pageResponse;
-            ViewBag.SearchName = query.Name;
-
-            return View(pageResponse.Data ?? new List<UserViewModel>());
+            return View(dashboard);
         }
-
-        private List<GroupTreeNodeViewModel> BuildGroupTree(List<GroupViewModel> groups)
-        {
-            var tree = new List<GroupTreeNodeViewModel>();
-            var groupDict = groups.ToDictionary(g => g.Id, g => new GroupTreeNodeViewModel
-            {
-                Id = g.Id,
-                Name = g.Name,
-                ParentId = g.ParentGroupId,
-                Code = g.Code,
-                OrderNumber = g.OrderNumber,
-                ICon = "jstree-folder",
-                Children = new List<GroupTreeNodeViewModel>()
-            });
-
-            foreach (var group in groups)
-            {
-                var node = groupDict[group.Id];
-                if (group.ParentGroupId.HasValue && groupDict.ContainsKey(group.ParentGroupId.Value))
-                {
-                    groupDict[group.ParentGroupId.Value].Children.Add(node);
-                }
-                else
-                {
-                    tree.Add(node);
-                }
-            }
-
-            return tree;
-        }
-
         // GET: /Group/GetGroupTree
         [HttpGet]
         public async Task<IActionResult> GetGroupTree()

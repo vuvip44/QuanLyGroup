@@ -46,3 +46,11 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+#groupTree {
+  margin-top: 20px;
+  min-height: 300px; /* Đảm bảo có chiều cao tối thiểu */
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 10px;
+}

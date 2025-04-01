@@ -8,6 +8,7 @@ using QuanLy.Infrastructure.Service.IService;
 using QuanLy.ViewModel.Require;
 using QuanLy.ViewModel.Require.User;
 using QuanLy.ViewModel.Response;
+using QuanLy.ViewModel.Response.Group;
 using QuanLy.ViewModel.Response.User;
 
 namespace QuanLy.Controllers
@@ -41,7 +42,7 @@ namespace QuanLy.Controllers
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("ModelState is invalid. Errors: {Errors}", string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return View(model);
+                return RedirectToAction(nameof(Index));
             }
 
             try
@@ -61,6 +62,9 @@ namespace QuanLy.Controllers
                 TempData["ErrorMessage"] = "An unexpected error occurred while creating user.";
                 return View(model);
             }
+            var groups = await _groupService.GetAllGroupsAsync();
+            ViewBag.Groups = groups ?? new List<GroupViewModel>();
+            return View(model);
         }
 
         //GET: /Users/Edit/1
@@ -155,7 +159,9 @@ namespace QuanLy.Controllers
             try
             {
                 var users = await _userService.GetAllUsersAsync(query);
-                return View(users);
+                ViewBag.PageResponse = users;
+                ViewBag.SearchName = query.Name;
+                return View(users.Data);
             }
             catch (System.Exception ex)
             {

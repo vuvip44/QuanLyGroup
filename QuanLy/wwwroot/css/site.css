@@ -55,3 +55,18 @@ body {
   pointer-events: none;
   opacity: 0.6;
 }
+
+#groupTree {
+  display: block !important;
+  visibility: visible !important;
+}
+.jstree-container-ul, .jstree-children {
+  display: block !important;
+  list-style: none !important;
+}
+.jstree-node {
+  display: block !important;
+}
+.jstree-anchor {
+  color: #000 !important;
+}
